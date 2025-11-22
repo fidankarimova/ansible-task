@@ -1,0 +1,4 @@
+.devcontainer
+.gradle
+k8s
+target

@@ -1,0 +1,58 @@
+---
+- name: Verify Docker is installed
+  command: docker --version
+  register: docker_version
+  changed_when: false
+  become: yes
+
+- name: Display Docker version
+  debug:
+    msg: "Docker version: {{ docker_version.stdout }}"
+
+- name: Ensure Docker service is running
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+  become: yes
+
+- name: Create Docker network
+  docker_network:
+    name: "{{ db_network }}"
+    state: present
+  become: yes
+
+- name: Pull database Docker image
+  docker_image:
+    name: "{{ db_image }}"
+    source: pull
+  become: yes
+
+- name: Stop and remove existing database container
+  docker_container:
+    name: "{{ db_container_name }}"
+    state: absent
+  become: yes
+  ignore_errors: yes
+
+- name: Start database container
+  docker_container:
+    name: "{{ db_container_name }}"
+    image: "{{ db_image }}"
+    state: started
+    restart_policy: always
+    ports:
+      - "{{ db_port }}:5432"
+    env: "{{ db_env_vars }}"
+    volumes: "{{ db_volumes }}"
+    networks:
+      - name: "{{ db_network }}"
+  become: yes
+  notify: verify database
+
+- name: Wait for database to be ready
+  wait_for:
+    host: "{{ host_ip }}"
+    port: "{{ db_port }}"
+    delay: 10
+    timeout: 1000

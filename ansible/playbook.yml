@@ -1,0 +1,10 @@
+---
+- name: Deploy Database and Web Application
+  hosts: devserver
+  gather_facts: yes
+  vars_files:
+    - inventory/vault.yml
+  roles:
+    - db
+    - build
+    - app

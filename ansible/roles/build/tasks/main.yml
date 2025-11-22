@@ -1,0 +1,61 @@
+---
+- name: Verify Docker is installed
+  command: docker --version
+  register: docker_version
+  changed_when: false
+  become: yes
+
+- name: Display Docker version
+  debug:
+    msg: "Docker version: {{ docker_version.stdout }}"
+
+- name: Ensure Docker service is running
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+  become: yes
+
+- name: Install required packages
+  package:
+    name:
+      - git
+      - python3-pip
+    state: present
+  become: yes
+
+- name: Ensure clone directory exists
+  file:
+    path: "{{ git_clone_dest | dirname }}"
+    state: directory
+    mode: '0755'
+
+- name: Clone Git repository
+  git:
+    repo: "{{ git_repo_url }}"
+    dest: "{{ git_clone_dest }}"
+    version: "{{ git_branch | default('main') }}"
+    force: "{{ git_force_clone | default(false) }}"
+    update: yes
+  register: git_clone_result
+
+- name: Build Docker image
+  docker_image:
+    name: "{{ docker_image_name }}"
+    tag: "{{ docker_image_tag | default('latest') }}"
+    source: build
+    build:
+      path: "{{ git_clone_dest }}"
+      dockerfile: "{{ dockerfile_path | default('Dockerfile') }}"
+      pull: "{{ docker_build_pull | default(true) }}"
+      args: "{{ docker_build_args | default({}) }}"
+    state: present
+    force_source: "{{ docker_force_build | default(false) }}"
+  register: docker_build_result
+
+- name: Display build results
+  ansible.builtin.debug:
+    msg:
+      - "Git clone status: {{ 'Updated' if git_clone_result.changed else 'No changes' }}"
+      - "Docker image: {{ docker_image_name }}:{{ docker_image_tag | default('latest') }}"
+      - "Build status: {{ 'Rebuilt' if docker_build_result.changed else 'No changes' }}"

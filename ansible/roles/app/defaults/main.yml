@@ -1,0 +1,10 @@
+---
+app_image: "fidankarimova168/petclinic:v2"
+app_container_name: "app"
+app_port: 8080
+app_env_vars:
+  spring.profiles.active: postgres
+  POSTGRES_USER: "{{ vault_db_user }}"
+  POSTGRES_PASS: "{{ vault_db_password }}"
+  POSTGRES_URL: "jdbc:postgresql://postgres:5432/{{ vault_db_name }}"
+app_network: "app_network"

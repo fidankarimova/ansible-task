@@ -1,0 +1,57 @@
+---
+- name: Verify Docker is installed
+  command: docker --version
+  register: docker_version
+  changed_when: false
+  become: yes
+
+- name: Display Docker version
+  debug:
+    msg: "Docker version: {{ docker_version.stdout }}"
+
+- name: Ensure Docker service is running
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+  become: yes
+
+- name: Create Docker network
+  docker_network:
+    name: "{{ app_network }}"
+    state: present
+  become: yes
+
+- name: Pull app Docker image
+  docker_image:
+    name: "{{ app_image }}"
+    source: pull
+  become: yes
+
+- name: Stop and remove existing app container
+  docker_container:
+    name: "{{ app_container_name }}"
+    state: absent
+  become: yes
+  ignore_errors: yes
+
+- name: Start app container
+  docker_container:
+    name: "{{ app_container_name }}"
+    image: "{{ app_image }}"
+    state: started
+    restart_policy: always
+    ports:
+      - "{{ app_port }}:8080"
+    env: "{{ app_env_vars }}"
+    networks:
+      - name: "{{ app_network }}"
+  become: yes
+  notify: verify app
+
+- name: Wait for app to be ready
+  wait_for:
+    host: "{{ host_ip }}"
+    port: "{{ app_port }}"
+    delay: 10
+    timeout: 1000

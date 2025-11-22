@@ -1,0 +1,11 @@
+---
+db_image: "postgres:17"
+db_container_name: "postgres"
+db_port: 5432
+db_env_vars:
+  POSTGRES_USER: "{{ vault_db_user }}"
+  POSTGRES_PASSWORD: "{{ vault_db_password }}"
+  POSTGRES_DB: "{{ vault_db_name }}"
+db_volumes:
+  - "/var/lib/postgresql/data:/var/lib/postgresql/data"
+db_network: "app_network"
