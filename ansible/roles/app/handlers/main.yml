@@ -3,3 +3,13 @@
   command: docker ps --filter "name={{ app_container_name }}"
   become: yes
   register: app_status
+
+- name: check web app
+  uri:
+    url: "http://{{ ansible_host }}:8080"
+    status_code: 200
+    timeout: 30
+  register: webapp_health
+  retries: 3
+  delay: 5
+  until: webapp_health.status == 200

@@ -55,3 +55,4 @@
     port: "{{ app_port }}"
     delay: 10
     timeout: 1000
+  notify: check web app
