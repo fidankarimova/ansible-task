@@ -3,9 +3,3 @@
   command: docker ps --filter "name={{ app_container_name }}"
   become: yes
   register: app_status
-
-- name: restart app
-  docker_container:
-    name: "{{ app_container_name }}"
-    state: restarted
-  become: yes

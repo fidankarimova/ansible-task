@@ -3,9 +3,3 @@
   command: docker ps --filter "name={{ db_container_name }}"
   become: yes
   register: db_status
-
-- name: restart database
-  docker_container:
-    name: "{{ db_container_name }}"
-    state: restarted
-  become: yes

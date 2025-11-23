@@ -1,7 +1,7 @@
 ---
 docker_image_name: "fidankarimova168/petclinic"
-docker_image_tag: "v3"
 docker_username: "{{ vault_docker_username }}"
 docker_password: "{{ vault_docker_password }}"
-git_clone_dest: "/tmp"
+git_clone_base_dir: "/tmp"
+git_clone_prefix: "docker-build"
 git_repo_url: https://github.com/fidankarimova/ansible-task

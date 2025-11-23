@@ -24,20 +24,27 @@
     state: present
   become: yes
 
+- name: Generate random clone directory
+  set_fact:
+    final_clone_dest: "{{ git_clone_base_dir }}/{{ git_clone_prefix }}-{{ ansible_date_time.iso8601_basic_short }}"
+
 - name: Ensure clone directory exists
   file:
-    path: "{{ git_clone_dest | dirname }}"
+    path: "{{ final_clone_dest }}"
     state: directory
     mode: '0755'
 
 - name: Clone Git repository
   git:
     repo: "{{ git_repo_url }}"
-    dest: "{{ git_clone_dest }}"
+    dest: "{{ final_clone_dest }}"
     version: "{{ git_branch | default('main') }}"
-    force: "{{ git_force_clone | default(false) }}"
     update: yes
   register: git_clone_result
+
+- name: Set Docker image tag with date
+  set_fact:
+    docker_image_tag: "{{ ansible_date_time.date ~ '-' ~ ansible_date_time.time | replace(':', '-') }}"
 
 - name: Build Docker image
   docker_image:
@@ -45,17 +52,22 @@
     tag: "{{ docker_image_tag | default('latest') }}"
     source: build
     build:
-      path: "{{ git_clone_dest }}"
+      path: "{{ final_clone_dest }}/app"
       dockerfile: "{{ dockerfile_path | default('Dockerfile') }}"
       pull: "{{ docker_build_pull | default(true) }}"
-      args: "{{ docker_build_args | default({}) }}"
     state: present
-    force_source: "{{ docker_force_build | default(false) }}"
   register: docker_build_result
 
-- name: Display build results
-  ansible.builtin.debug:
-    msg:
-      - "Git clone status: {{ 'Updated' if git_clone_result.changed else 'No changes' }}"
-      - "Docker image: {{ docker_image_name }}:{{ docker_image_tag | default('latest') }}"
-      - "Build status: {{ 'Rebuilt' if docker_build_result.changed else 'No changes' }}"
+- name: Capture full image name for later use
+  set_fact:
+    built_docker_image: "{{ docker_image_name }}:{{ docker_image_tag }}"
+    docker_image_details:
+      name: "{{ docker_image_name }}"
+      tag: "{{ docker_image_tag }}"
+      full_name: "{{ docker_image_name }}:{{ docker_image_tag }}"
+      image_id: "{{ docker_build_result.image.Id | default('') }}"
+
+- name: Display built image info
+  debug:
+    msg: "Built image: {{ built_docker_image }}"
+
