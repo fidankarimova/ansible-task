@@ -1,7 +1,5 @@
 # Spring PetClinic Sample Application
 
-
-
 # Ansible Docker Deployment
 
 Automated deployment of a Spring Boot application with PostgreSQL database using Ansible and Docker.
@@ -23,30 +21,35 @@ This project provides Ansible playbooks and roles to:
 ## Project Structure
 
 ```
-.
-├── roles/
-│   ├── build/
-│   │   ├── defaults/main.yml    # Build configuration
-│   │   └── tasks/main.yml       # Build tasks
-│   ├── database/
-│   │   ├── defaults/main.yml    # Database configuration
-│   │   ├── tasks/main.yml       # Database deployment
-│   │   └── handlers/main.yml    # Database verification
-│   └── app/
-│       ├── defaults/main.yml    # App configuration
-│       ├── tasks/main.yml       # App deployment
-│       └── handlers/main.yml    # App health checks
-├── playbook.yml
-└── inventory.ini
+├── ansible/
+│   ├── inventory/
+│   │   ├── hosts.yml            # Inventory configuration
+│   │   └── vault.yml            # Encrypted credentials
+│   ├── roles/
+│   │   ├── build/
+│   │   │   ├── defaults/main.yml    # Build configuration
+│   │   │   └── tasks/main.yml       # Build tasks
+│   │   ├── db/
+│   │   │   ├── defaults/main.yml    # Database configuration
+│   │   │   ├── tasks/main.yml       # Database deployment
+│   │   │   └── handlers/main.yml    # Database verification
+│   │   └── app/
+│   │       ├── defaults/main.yml    # App configuration
+│   │       ├── tasks/main.yml       # App deployment
+│   │       └── handlers/main.yml    # App health checks
+│   ├── .vault_pass              # Vault password file
+│   └── playbook.yml
+├── app/                         # Spring Boot application code
+└── .gitignore
 ```
 
 ## Prerequisites
 
 - Ansible 2.9+
 - Target server with:
-    - Docker installed
-    - Python 3
-    - SSH access
+  - Docker installed
+  - Python 3
+  - SSH access
 
 ## Configuration
 
@@ -102,24 +105,27 @@ Key variables in `roles/*/defaults/main.yml`:
 ### Run Complete Deployment
 
 ```bash
-ansible-playbook -i inventory.ini playbook.yml --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml playbook.yml --ask-vault-pass -kK
 ```
 
 ### Run Specific Roles
 
 Build image only:
+
 ```bash
-ansible-playbook -i inventory.ini playbook.yml --tags build --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml playbook.yml --ask-vault-pass -kK --tags build
 ```
 
 Deploy database only:
+
 ```bash
-ansible-playbook -i inventory.ini playbook.yml --tags database --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml playbook.yml --ask-vault-pass -kK --tags db
 ```
 
 Deploy application only:
+
 ```bash
-ansible-playbook -i inventory.ini playbook.yml --tags app --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml playbook.yml --ask-vault-pass -kK --tags app
 ```
 
 ## Roles Description
@@ -146,29 +152,33 @@ ansible-playbook -i inventory.ini playbook.yml --tags app --ask-vault-pass
 The deployment includes automatic health verification:
 - **Database**: Checks container is running via `docker ps`
 - **Application**:
-    - Verifies container is running
-    - HTTP health check on port 8080 with 3 retries
+  - Verifies container is running
+  - HTTP health check on port 8080 with 3 retries
 
 ## Troubleshooting
 
 **Container not starting:**
+
 ```bash
 docker logs <container_name>
 ```
 
 **Network issues:**
+
 ```bash
 docker network inspect app_network
 ```
 
 **Check running containers:**
+
 ```bash
 docker ps -a
 ```
 
 **View Ansible output:**
+
 ```bash
-ansible-playbook -i inventory.ini playbook.yml -vvv --ask-vault-pass
+ansible-playbook -i inventory/hosts.yml playbook.yml -vvv --ask-vault-pass -kK
 ```
 
 ## Security Notes
